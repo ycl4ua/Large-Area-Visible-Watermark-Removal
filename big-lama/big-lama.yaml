@@ -1,0 +1,136 @@
+# ILAW training configuration.
+# Run from the repository root:
+#   python bin/train.py -cn big-lama location.data_root_dir=/path/to/ILAW
+
+run_title: ilaw-adapter
+
+training_model:
+  kind: default
+  concat_mask: true
+
+losses:
+  l1:
+    weight_missing: 0
+    weight_known: 10
+  adversarial:
+    kind: r1
+    weight: 10
+    gp_coef: 0.001
+    mask_as_fake_target: true
+    allow_scale_mask: true
+  feature_matching:
+    weight: 100
+  resnet_pl:
+    weight: 30
+    # ADE20K ResNet50 encoder, expected at
+    #   $TORCH_HOME/ade20k/ade20k-resnet50dilated-ppm_deepsup/encoder_epoch_20.pth
+    weights_path: ${oc.env:TORCH_HOME}
+
+# ILAW generator: LaMa FFC backbone + WCC/BCE branches + GFM fusion.
+# The branches and GFMs are built inside FFCResNetGenerator and need no fields.
+generator:
+  kind: ffc_resnet
+  input_nc: 4
+  output_nc: 3
+  ngf: 64
+  n_downsampling: 3
+  n_blocks: 18
+  add_out_act: sigmoid
+  init_conv_kwargs:
+    ratio_gin: 0
+    ratio_gout: 0
+    enable_lfu: false
+  downsample_conv_kwargs:
+    ratio_gin: ${generator.init_conv_kwargs.ratio_gout}
+    ratio_gout: ${generator.downsample_conv_kwargs.ratio_gin}
+    enable_lfu: false
+  resnet_conv_kwargs:
+    ratio_gin: 0.75
+    ratio_gout: ${generator.resnet_conv_kwargs.ratio_gin}
+    enable_lfu: false
+
+# Same patch discriminator as big-lama.
+discriminator:
+  kind: pix2pixhd_nlayer
+  input_nc: 3
+  ndf: 64
+  n_layers: 4
+
+optimizers:
+  generator:
+    kind: adam
+    lr: 0.0001
+  discriminator:
+    kind: adam
+    lr: 0.0001
+
+location:
+  # Root containing the ILAW splits, e.g. /path/to/ILAW/train and .../validation
+  data_root_dir: /path/to/ILAW
+  out_root_dir: outputs
+  tb_dir: outputs/tb
+  # Big-LaMa checkpoint used to initialize the FFC backbone.  Set to null to
+  # train from random initialization.
+  pretrained_model_path: big-lama/models/best.ckpt
+
+# ILAW layout, as read by src/data/ilaw.py::InpaintingDataset.
+# Each split contains:
+#   Watermark_free_image/ (Gwf), Watermarked_image/ (X),
+#   Mask/ (M), Cleancomp/ (Gbkg), and optionally alpha/.
+data:
+  batch_size: 16
+  val_batch_size: 2
+  num_workers: 3
+
+  train:
+    kind: ilaw
+    indir: ${location.data_root_dir}/train
+    img_suffix: .png
+    dataloader_kwargs:
+      batch_size: ${data.batch_size}
+      shuffle: true
+      num_workers: ${data.num_workers}
+
+  val:
+    kind: ilaw
+    indir: ${location.data_root_dir}/validation
+    img_suffix: .png
+    dataloader_kwargs:
+      batch_size: ${data.val_batch_size}
+      shuffle: false
+      num_workers: ${data.num_workers}
+
+# Validation metrics during training: PSNR / SSIM / LPIPS.
+# RMSE and RMSEw are computed by bin/test.py.
+evaluator:
+  kind: default
+  inpainted_key: inpainted
+  integral_kind: 'None'
+  ssim: true
+  lpips: true
+
+trainer:
+  kwargs:
+    # Single GPU by default.  For multi-GPU, set gpus=-1 accelerator=ddp.
+    gpus: 1
+    max_epochs: 100
+    gradient_clip_val: 1
+    limit_train_batches: 1.0
+    val_check_interval: 1.0
+    log_every_n_steps: 250
+    precision: 32
+    check_val_every_n_epoch: 1
+    num_sanity_val_steps: 8
+  checkpoint_kwargs:
+    verbose: true
+    save_top_k: 5
+    save_last: true
+    monitor: val_ssim_total_mean
+    mode: max
+
+hydra:
+  run:
+    dir: ${location.out_root_dir}/${now:%Y%m%d-%H%M%S}
+  sweep:
+    dir: ${location.out_root_dir}/multirun
+    subdir: ${hydra.job.num}

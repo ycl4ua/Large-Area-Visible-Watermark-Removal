@@ -1,0 +1,38 @@
+This repository builds on the following open-source projects.  Their original
+licenses and notices apply to the corresponding files.
+
+1. LaMa: Resolution-robust Large Mask Inpainting with Fourier Convolutions
+   https://github.com/advimman/lama
+   License: Apache-2.0 (see third_party_licenses/LaMa-APACHE-2.0.txt)
+   Files: src/**, models/ade20k/**, bin/train.py (adapted)
+
+2. Fast Fourier Convolution (FFC)
+   https://github.com/pkumivision/FFC
+   License: Apache-2.0
+   Files: the FFC primitives in src/training/modules/ffc.py
+
+3. Restormer: Efficient Transformer for High-Resolution Image Restoration
+   https://github.com/swz30/Restormer
+   License: MIT
+   Files: src/training/modules/restormer_arch.py
+
+4. LPIPS / Perceptual Similarity
+   https://github.com/richzhang/PerceptualSimilarity
+   License: BSD-2-Clause
+   Files: src/evaluation/lpips.py,
+          models/lpips_models/
+
+5. ADE20K semantic segmentation code (CSAILVision)
+   https://github.com/CSAILVision/semantic-segmentation-pytorch
+   License: BSD-3-Clause
+   Files: models/ade20k/
+
+6. SLBR: Split then Refine for visible watermark removal
+   https://github.com/bcmi/SLBR-Visible-Watermark-Removal
+   The upstream repository does not declare a license.  The coarse-mask
+   perturbation utility was adapted from that line of work; please confirm the
+   upstream terms before redistributing that file.
+   Files: src/data/coarse_mask.py
+
+Please retain this NOTICE and the third_party_licenses directory when
+redistributing the code.
