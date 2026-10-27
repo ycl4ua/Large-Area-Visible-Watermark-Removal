@@ -143,8 +143,6 @@ class FFC(nn.Module):
         in_cl = in_channels - in_cg
         out_cg = int(out_channels * ratio_gout)
         out_cl = out_channels - out_cg
-        #groups_g = 1 if groups == 1 else int(groups * ratio_gout)
-        #groups_l = 1 if groups == 1 else groups - groups_g
 
         self.ratio_gin = ratio_gin
         self.ratio_gout = ratio_gout
@@ -317,7 +315,6 @@ class FFCResNetGenerator(nn.Module):
         assert (n_blocks >= 0)
         super().__init__()
 
-        # generator.model.0.
         model_init = [nn.ReflectionPad2d(3),
                  FFC_BN_ACT(input_nc, ngf, kernel_size=7, padding=0, norm_layer=norm_layer,
                             activation_layer=activation_layer, **init_conv_kwargs)]
@@ -329,7 +326,6 @@ class FFCResNetGenerator(nn.Module):
         self.side01 = [nn.ReflectionPad2d(3),
                  FFC_BN_ACT(input_nc + 3, ngf, kernel_size=7, padding=0, norm_layer=norm_layer,
                             activation_layer=activation_layer, **init_conv_kwargs)]
-        # 2
         ### downsample
         for i in range(n_downsampling):
             mult = 2 ** i
@@ -363,7 +359,6 @@ class FFCResNetGenerator(nn.Module):
         mult = 2 ** n_downsampling
         feats_num_bottleneck = min(max_features, ngf * mult)
         
-        # 5
         ### resnet blocks
         model1 = []
         for i in range(n_blocks // 3):
@@ -384,7 +379,6 @@ class FFCResNetGenerator(nn.Module):
         self.fuse2 = GFM(feats_num_bottleneck)
         self.side2 = TransformerBlock(feats_num_bottleneck, 8, 2.66, False, 'WithBias')
         self.side21 = TransformerBlock(feats_num_bottleneck, 8, 2.66, False, 'WithBias')
-#        
         model3 = []
         for i in range(n_blocks // 3):
             cur_resblock = FFCResnetBlock(feats_num_bottleneck, padding_type=padding_type, activation_layer=activation_layer,
@@ -395,13 +389,11 @@ class FFCResNetGenerator(nn.Module):
         self.side3 = TransformerBlock(feats_num_bottleneck, 8, 2.66, False, 'WithBias')
         self.side31 = TransformerBlock(feats_num_bottleneck, 8, 2.66, False, 'WithBias')
 
-        # 23
         model_final = []
         self.fuse4 = GFM(feats_num_bottleneck)
         model_final += [ConcatTupleLayer()]
         self.side4 = []
 
-        # 24
         ### upsample
         for i in range(n_downsampling):
             mult = 2 ** (n_downsampling - i)
@@ -423,14 +415,12 @@ class FFCResNetGenerator(nn.Module):
             self.side4 += [FFCResnetBlock(ngf, padding_type=padding_type, activation_layer=activation_layer,
                                      norm_layer=norm_layer, inline=True, **out_ffc_kwargs)]
         
-        # 33
         model_final += [nn.ReflectionPad2d(3),
                   nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]
         
         self.side4 += [nn.ReflectionPad2d(3),
                   nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0)]
                   
-        # 35
         if add_out_act:
             model_final.append(get_activation('tanh' if add_out_act is True else add_out_act))
         self.model_init = nn.Sequential(*model_init)

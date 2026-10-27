@@ -314,11 +314,6 @@ class DistModel(BaseModel):
         else:  # test mode
             self.net.eval()
 
-        # if (use_gpu):
-            # self.net.to(gpu_ids[0])
-            # self.net = torch.nn.DataParallel(self.net, device_ids=gpu_ids)
-            # if (self.is_train):
-            #     self.rankLoss = self.rankLoss.to(device=gpu_ids[0])  # just put this on GPU0
 
         if (printNet):
             print('---------- Networks initialized -------------')
@@ -354,19 +349,8 @@ class DistModel(BaseModel):
         self.input_p1 = data['p1']
         self.input_judge = data['judge']
 
-        # if (self.use_gpu):
-        #     self.input_ref = self.input_ref.to(device=self.gpu_ids[0])
-        #     self.input_p0 = self.input_p0.to(device=self.gpu_ids[0])
-        #     self.input_p1 = self.input_p1.to(device=self.gpu_ids[0])
-        #     self.input_judge = self.input_judge.to(device=self.gpu_ids[0])
-
-        # self.var_ref = Variable(self.input_ref, requires_grad=True)
-        # self.var_p0 = Variable(self.input_p0, requires_grad=True)
-        # self.var_p1 = Variable(self.input_p1, requires_grad=True)
 
     def forward_train(self):  # run forward pass
-        # print(self.net.module.scaling_layer.shift)
-        # print(torch.norm(self.net.module.net.slice1[0].weight).item(), torch.norm(self.net.module.lin0.model[1].weight).item())
 
         assert False, "We shoud've not get here when using LPIPS as a metric"
 
@@ -642,7 +626,6 @@ class BCERankingLoss(nn.Module):
     def __init__(self, chn_mid=32):
         super(BCERankingLoss, self).__init__()
         self.net = Dist2LogitLayer(chn_mid=chn_mid)
-        # self.parameters = list(self.net.parameters())
         self.loss = torch.nn.BCELoss()
 
     def forward(self, d0, d1, judge):
@@ -673,8 +656,6 @@ class L2(FakeNet):
             value = l2(tensor2np(tensor2tensorlab(in0.data, to_norm=False)),
                        tensor2np(tensor2tensorlab(in1.data, to_norm=False)), range=100.).astype('float')
             ret_var = Variable(torch.Tensor((value,)))
-            # if (self.use_gpu):
-            #     ret_var = ret_var.cuda()
             return ret_var
 
 
@@ -689,8 +670,6 @@ class DSSIM(FakeNet):
             value = dssim(tensor2np(tensor2tensorlab(in0.data, to_norm=False)),
                           tensor2np(tensor2tensorlab(in1.data, to_norm=False)), range=100.).astype('float')
         ret_var = Variable(torch.Tensor((value,)))
-        # if (self.use_gpu):
-        #     ret_var = ret_var.cuda()
         return ret_var
 
 
