@@ -86,7 +86,7 @@ CUDA_VISIBLE_DEVICES=0 python bin/train.py \
 ```
 
 The default configuration follows the paper: Adam, learning rate `1e-4`,
-100 epochs, batch size 16, and LaMa's loss weights. On GPUs with limited memory,
+100 epochs, batch size 16, and the paper's loss weights. On GPUs with limited memory,
 reduce the batch size, e.g. `data.batch_size=2 data.val_batch_size=1`. If you do
 not have the ADE20K encoder, add `losses.resnet_pl.weight=0` for a quick run.
 

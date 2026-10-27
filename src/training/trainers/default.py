@@ -80,7 +80,8 @@ class DefaultInpaintingTrainingModule(BaseInpaintingTrainingModule):
 
         # ResNet50 perceptual loss on Y and C_bkg (Eq. 7).
         if self.loss_resnet_pl is not None:
-            resnet_pl_value = self.loss_resnet_pl(predicted_img, img)
+            resnet_pl_value = (self.loss_resnet_pl(predicted_img, img) +
+                               self.loss_resnet_pl(batch['predicted_comp'], batch['comp']))
             total_loss = total_loss + resnet_pl_value
             metrics['gen_resnet_pl'] = resnet_pl_value
 
