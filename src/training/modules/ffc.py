@@ -7,7 +7,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 
 from src.training.modules.base import get_activation
-from src.training.modules.squeeze_excitation import SELayer
 from src.training.modules.restormer_arch import TransformerBlock
 
 
@@ -15,7 +14,7 @@ from src.training.modules.restormer_arch import TransformerBlock
 class FourierUnit(nn.Module):
 
     def __init__(self, in_channels, out_channels, groups=1, spatial_scale_factor=None, spatial_scale_mode='bilinear',
-                 spectral_pos_encoding=False, use_se=False, se_kwargs=None, ffc3d=False, fft_norm='ortho'):
+                 spectral_pos_encoding=False, ffc3d=False, fft_norm='ortho'):
         # bn_layer not used
         super(FourierUnit, self).__init__()
         self.groups = groups
@@ -25,13 +24,6 @@ class FourierUnit(nn.Module):
                                           kernel_size=1, stride=1, padding=0, groups=self.groups, bias=False)
         self.bn = torch.nn.BatchNorm2d(out_channels * 2)
         self.relu = torch.nn.ReLU(inplace=True)
-
-        # squeeze and excitation block
-        self.use_se = use_se
-        if use_se:
-            if se_kwargs is None:
-                se_kwargs = {}
-            self.se = SELayer(self.conv_layer.in_channels, **se_kwargs)
 
         self.spatial_scale_factor = spatial_scale_factor
         self.spatial_scale_mode = spatial_scale_mode
@@ -58,9 +50,6 @@ class FourierUnit(nn.Module):
             coords_vert = torch.linspace(0, 1, height)[None, None, :, None].expand(batch, 1, height, width).to(ffted)
             coords_hor = torch.linspace(0, 1, width)[None, None, None, :].expand(batch, 1, height, width).to(ffted)
             ffted = torch.cat((coords_vert, coords_hor, ffted), dim=1)
-
-        if self.use_se:
-            ffted = self.se(ffted)
 
         ffted = self.conv_layer(ffted)  # (batch, c*2, h, w/2+1)
         ffted = self.relu(self.bn(ffted))
