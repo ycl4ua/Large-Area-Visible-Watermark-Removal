@@ -5,7 +5,7 @@ __pycache__/
 !models/lpips_models/*.pth
 outputs/
 visualizer-output/
-data/
+/data/
 big-lama/models/*
 !big-lama/models/.gitkeep
 .pytest_cache/

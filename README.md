@@ -173,6 +173,8 @@ ILAW/
 - Every folder must contain the **same file stem** for the same sample. The
   example uses zero-padded `000000.png`; any unique stem works as long as all
   folders match.
+- Folder names are **case-sensitive** and must match exactly:
+  `Watermark_free_image`, `Watermarked_image`, `Mask`, `Cleancomp`, `alpha`.
 - **Naming is by stem only**; extensions must be one of `.png/.jpg/.jpeg/.bmp/
   .tif/.tiff/.webp`. `.png` is recommended to avoid compression artifacts.
 - Paper sizes: train 256×256, validation 512×512. The model is fully
